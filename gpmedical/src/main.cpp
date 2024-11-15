@@ -6,10 +6,18 @@
 
 char pulses[amount_of_digits]; // array
 char pulses_1[amount_of_digits]; // array
-char pulses_2[4]; // array
-byte pulses_size = 2; // bytes almacenados
+byte pulses_size = 3; // bytes almacenados
 byte pulses_size_1 = 3; // bytes almacenados
-byte pulses_size_2 = 3; // bytes almacenados
+
+const int ac_in_zero = 2;
+
+const int triac = 12;
+
+bool state = false;
+
+int state_ac_in_zero = 0;
+
+int lastButtonState_asc = 0;
 
 char customKey; // valor de los key presionados
 
@@ -29,10 +37,6 @@ float division;
 
 float aditional_value = 0;
 
-float final_number_float;
-
-float multiply_related_to_freq = 25;
-
 // variables restrictivas -------------------------------------------------------------
 int factor_change_pages = 2;
 bool pass_value_in_moment_first_page = false;
@@ -42,8 +46,6 @@ int amount_of_numbers_in_time = 0;
 int count;
 
 // strings conditionales 
-
-String condition_for_set_hz = "set_hz";
 String condition_for_set_time = "set_time";
 
 
@@ -79,8 +81,8 @@ LiquidCrystal_I2C lcd(0x27,16,2);  //definir lcd
 void setup(){
 
   // define output
-  pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);
+  pinMode(triac, OUTPUT);
+  pinMode(ac_in_zero, INPUT);
 
   // define push
   pinMode(3, INPUT_PULLUP);
@@ -237,9 +239,19 @@ void loop(){
   while (digitalRead(3) == LOW && final_time >= 5)
   {
     temporary_if = true;
-    division = scaling/(final_time*(multiply_related_to_freq)); // change this multiply to add incrementation
-    function_repetitive();
+    division = scaling/(final_time); // change this multiply to add incrementation
+    state_ac_in_zero = digitalRead(ac_in_zero);
+
+    if(state_ac_in_zero != lastButtonState_asc){
+      if (state_ac_in_zero == LOW){
+        state = true;
+      }
     }
+    lastButtonState_asc = state_ac_in_zero;
+    if(state == true){
+      function_repetitive();
+    }
+  }
   if(customKeypad.getKey() == '*'){
       pass_value_in_moment_third_page = false;
       goto see_page_3;
@@ -256,13 +268,13 @@ void loop(){
 void change_values(){
 inic:
   bool moment_pass_to_confirm_result = false;
-  pulses_size = 2;
+  pulses_size = 3;
 
   while (moment_pass_to_confirm_result == false){
       lcd.setCursor(2, 0);
       lcd.print("*SET A");
       lcd.setCursor(0, 1);
-      lcd.print("VALUE 10-90:");
+      lcd.print("VALUE 0-100:");
 
     // bloquear el uso de otros caracteres
     again:
@@ -274,13 +286,13 @@ inic:
     break;
   }
     // almacena y escribe la información proporcionada
-    else if (customKey && customKey != 'C' && customKey != 'D'&& pulses_size <= 2 && pulses_size > 0){
+    else if (customKey && customKey != 'C' && customKey != 'D'&& pulses_size <= 3 && pulses_size > 0){
     pulses[pulses_size] = customKey; 
     lcd.setCursor(15 - pulses_size ,1); 
     lcd.print(pulses[pulses_size]); 
     pulses_size--;
  }
-    else if(customKey == 'D' && pulses_size < 2){
+    else if(customKey == 'D' && pulses_size < 3){
       pulses_size++; 
       pulses[pulses_size] = ' '; 
       lcd.setCursor(15 - pulses_size,1);
@@ -298,16 +310,15 @@ inic:
 
     // convertir de array a string concatenandolo y luego a int
     String numberString = "";
-    for (int i = 3; i > pulses_size; i--) {
+    for (int i = 4; i > pulses_size; i--) {
       numberString += String(pulses[i]); // concatenar
     }
 
     final_number = numberString.toInt(); // convertir a int 
-    Serial.println("Wave amplitude obtained: " + String(final_number)); 
-    percent = final_number/100;
-    scaling = millis_p * percent;
+    Serial.println("Percentage obtained: " + String(final_number)); 
+    scaling = 8300*(final_number/100);
     
-    if (final_number < 10 || final_number > 90){
+    if (final_number < 0 || final_number > 100){
       lcd.clear();
       lcd.setCursor(3, 0);
       lcd.print("ERROR ONLY");
@@ -326,26 +337,26 @@ inic:
 
 void function_repetitive(){
     // 10 hercios dispuesto a ser set
-  digitalWrite(13, LOW);
-  delay(millis_p - aditional_value); 
+  delaymicroseconds(aditional_value);
+  digitalWrite(triac, HIGH);
   lcd.clear();
   lcd.setCursor(5, 0);
   lcd.print((aditional_value/scaling)*100);
   Serial.println(aditional_value);
-  digitalWrite(13, HIGH);
-  delay(aditional_value);
+  delaymicroseconds(10);
+  digitalWrite(triac, LOW);
 
 
   aditional_value += division;
   while (digitalRead(3) == LOW && aditional_value >= scaling){
-    digitalWrite(13, LOW);
-  delay(scaling); 
+  delaymicroseconds(scaling); 
+  digitalWrite(triac, HIGH);
   lcd.clear();
   lcd.setCursor(5, 0);
   lcd.print((scaling/scaling)*100);
   Serial.println(scaling);
-  digitalWrite(13, HIGH);
-  delay(millis_p - scaling);
+  delaymicroseconds(10);
+  digitalWrite(triac, LOW);
   }
 }
 
@@ -427,7 +438,7 @@ void set_time_curve(){
 
 // Sección para limpiar arrays
 void clearData(){
-  while(pulses_size < 2){
+  while(pulses_size < 3){
     pulses_size++;
     pulses[pulses_size] = 0; 
   }
@@ -436,7 +447,7 @@ void clearData(){
 
 void clearData_1(String condition){
 
-  else if (condition == "set_time"){
+  if (condition == "set_time"){
     while(pulses_size_1 < 3){
       pulses_size_1++;
       Serial.println(pulses_1[pulses_size_1]);
