@@ -36,7 +36,6 @@ float multiply_related_to_freq = 25;
 // variables restrictivas -------------------------------------------------------------
 int factor_change_pages = 2;
 bool pass_value_in_moment_first_page = false;
-bool pass_value_in_moment_second_page = false;
 bool pass_value_in_moment_third_page = false;
 bool temporary_if;
 int amount_of_numbers_in_time = 0;
@@ -128,19 +127,9 @@ void loop(){
     lcd.print("PRESS A TIME");
     factor_change_pages = 1;
     pass_value_in_moment_first_page = true;
-    pass_value_in_moment_second_page = false;
     pass_value_in_moment_third_page = false;
   }
-  else if ((customKey == 'D') && (factor_change_pages == 1)){
-    see_page_2:
-    lcd.clear();
-    lcd.setCursor(2, 0);
-    lcd.print("PRESS B FREQ");
-    factor_change_pages = 2;
-    pass_value_in_moment_first_page = false;
-    pass_value_in_moment_second_page = true;
-    pass_value_in_moment_third_page = false;
-  }
+  
   else if ((customKey == 'D') && (factor_change_pages == 2)){
     see_page_3:
     lcd.clear();
@@ -151,12 +140,9 @@ void loop(){
     currentState = START;
     factor_change_pages = 0;
     pass_value_in_moment_first_page = false;
-    pass_value_in_moment_second_page = false;
     pass_value_in_moment_third_page = true;
   }
   else if ((customKey == '*') && (pass_value_in_moment_third_page == true)){
-      goto see_page_2;
-    }else if ((customKey == '*') && (pass_value_in_moment_second_page == true)){
       goto see_page_1;
     }
       else if ((customKey == '*') && (pass_value_in_moment_first_page == true)){
@@ -186,21 +172,8 @@ void loop(){
         currentState = SET_VALUES;
         goto see_page_1;
       }
-      else if ((customKey == 'B') && (pass_value_in_moment_second_page == true))
-      {
-        clearData_1(condition_for_set_hz);
-        lcd.clear();
-        set_hz();
-        currentState = SET_VALUES;
-        lcd.clear();
-        lcd.setCursor(1, 0);
-        lcd.print("NOW YOU MUST");
-        lcd.setCursor(1, 1);
-        lcd.print("CHANGE VALUE");
-        delay(3000);
-        goto for_apply_hz;
-        goto see_page_2;
-      } else if ( (customKey == 'C') && (pass_value_in_moment_third_page == true)){
+      
+      else if ( (customKey == 'C') && (pass_value_in_moment_third_page == true)){
         temporary_if = true;
         currentState = SET_VALUES;
       }
@@ -233,21 +206,6 @@ void loop(){
     currentState = SET_VALUES;
     goto see_page_1;
   }
-  else if ((customKey == 'B') && (pass_value_in_moment_second_page == true))
-      {
-        clearData_1(condition_for_set_hz);
-        lcd.clear();
-        set_hz();
-        currentState = SET_VALUES;
-        lcd.clear();
-        lcd.setCursor(1, 0);
-        lcd.print("NOW YOU MUST");
-        lcd.setCursor(1, 1);
-        lcd.print("CHANGE VALUE");
-        delay(3000);
-        goto for_apply_hz;
-        goto see_page_2;
-      }
   while (pass_value_in_moment_third_page == true){
   if (digitalRead(3) == LOW && final_time < 5){
       lcd.clear();
@@ -462,97 +420,6 @@ void set_time_curve(){
   lcd.clear();
 }
 
-//--------------------------------------------------------------------------------------------------------------------------
-
-void set_hz(){
-  inic:
-  bool moment_pass_to_confirm_result_3 = false;
-  pulses_size_2 = 3;
-
-  while (moment_pass_to_confirm_result_3 == false ){
-      lcd.setCursor(2, 0);
-      lcd.print("*SET A");
-      lcd.setCursor(0, 1);
-      lcd.print("FREQ 10-400:");
-
-    // bloquear el uso de otros caracteres
-  again:
-  customKey = customKeypad.getKey();
-  if (customKey == '#' || customKey == 'B' || customKey == 'A' ){
-    goto again;
-    }
-    else if (customKey == '*'){
-    break;
-  }
-    // almacena y escribe la información proporcionada
-    else if (customKey && customKey != 'C' && customKey != 'D'&& pulses_size_2 <= 3 && pulses_size_2 > 0){
-    pulses_2[pulses_size_2] = customKey; 
-    lcd.setCursor(16 - pulses_size_2 ,1); 
-    lcd.print(pulses_2[pulses_size_2]); 
-    pulses_size_2--;
- }
- else if(customKey == 'D' && pulses_size_2 < 3){
-    pulses_size_2++; 
-    pulses_2[pulses_size_2] = ' '; 
-    lcd.setCursor(16 - pulses_size_2,1);
-    lcd.print(pulses_2[pulses_size_2]); 
- } 
- else if(customKey == 'C'){ // condición para aceptar la información actual (Confirm)
-        pulses_size_2 = 0; // mandar la información que se encuentre sin importar
-        moment_pass_to_confirm_result_3 = true; // rompe el while con la información
-      }
-
-  }
-  // enviar la información 
-    delay(1000);
-    if (pulses_size_2 == 0){
-
-    // convertir de array a string concatenandolo y luego a int
-    String numberString_2 = " ";
-    for (int i = 3; i > pulses_size_2; i--) {
-      numberString_2 += String(pulses_2[i]); // concatenar
-    }
-
-    float compare = numberString_2.toInt();
-    Serial.println("Frequency obtained: "+ String(compare));
-    millis_p = (1/compare)*1000; // convertir a int
-
-    if (compare <= 12){
-      multiply_related_to_freq = 9.375;
-    }
-    else if (compare > 12 && compare <= 20){
-      multiply_related_to_freq = 12.5;
-    }
-    else if (compare > 20 && compare <= 50){
-      multiply_related_to_freq = 25;
-    }
-    else if (compare > 50 && compare <= 70){
-      multiply_related_to_freq = 37.5;
-    }
-    else if (compare > 70 && compare <= 300){
-      multiply_related_to_freq = 50;
-    }
-    else if(compare > 300 && compare <= 400){
-      multiply_related_to_freq = 65;
-    }
-
-    Serial.println("Multiplication factor: " + String(multiply_related_to_freq));
-
-    if (compare < 10 || compare > 400){
-      lcd.clear();
-      lcd.setCursor(3, 0);
-      lcd.print("ERROR ONLY");
-      lcd.setCursor(2, 1);
-      lcd.print("VALUES 10-400");
-      delay(4000);
-      clearData_1(condition_for_set_hz);
-      lcd.clear();
-      goto inic;
-    }
-  }
-  lcd.clear();
-}
-
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -568,13 +435,7 @@ void clearData(){
 }
 
 void clearData_1(String condition){
-  if (condition == "set_hz"){
-    while(pulses_size_2 < 3){
-      pulses_size_2++;
-      pulses_2[pulses_size_2] = 0; 
-    }
-    return;
-  }
+
   else if (condition == "set_time"){
     while(pulses_size_1 < 3){
       pulses_size_1++;
