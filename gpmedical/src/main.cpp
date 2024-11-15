@@ -5,7 +5,7 @@
 #define amount_of_digits 3
 
 char pulses[amount_of_digits]; // array
-char pulses_1[amount_of_digits]; // array
+char pulses_1[4]; // array
 byte pulses_size = 3; // bytes almacenados
 byte pulses_size_1 = 3; // bytes almacenados
 
@@ -38,9 +38,6 @@ bool pass_value_in_moment_third_page = false;
 bool temporary_if;
 int amount_of_numbers_in_time = 0;
 int count;
-
-// strings conditionales 
-String condition_for_set_time = "set_time";
 
 
 
@@ -121,7 +118,7 @@ void loop(){
     lcd.print("PRESS # VALUE");
     lcd.setCursor(1, 1);
     lcd.print("PRESS A TIME");
-    factor_change_pages = 1;
+    factor_change_pages = 2;
     pass_value_in_moment_first_page = true;
     pass_value_in_moment_third_page = false;
   }
@@ -162,7 +159,7 @@ void loop(){
       }
       else if ((customKey == 'A') && (pass_value_in_moment_first_page == true))
       {
-        clearData_1(condition_for_set_time);
+        clearData_1();
         lcd.clear();
         set_time_curve();
         currentState = SET_VALUES;
@@ -196,7 +193,7 @@ void loop(){
 
   else if ((customKey == 'A') && (pass_value_in_moment_first_page == true))
   {
-    clearData_1(condition_for_set_time);
+    clearData_1();
     lcd.clear();
     set_time_curve();
     currentState = SET_VALUES;
@@ -306,6 +303,7 @@ inic:
     String numberString = "";
     for (int i = 4; i > pulses_size; i--) {
       numberString += String(pulses[i]); // concatenar
+      Serial.println(numberString);
     }
 
     final_number = numberString.toInt(); // convertir a int 
@@ -331,25 +329,25 @@ inic:
 
 void function_repetitive(){
     // 10 hercios dispuesto a ser set
-  delaymicroseconds(aditional_value);
+  delayMicroseconds(aditional_value);
   digitalWrite(triac, HIGH);
   lcd.clear();
   lcd.setCursor(5, 0);
   lcd.print((aditional_value/scaling)*100);
   Serial.println(aditional_value);
-  delaymicroseconds(10);
+  delayMicroseconds(10);
   digitalWrite(triac, LOW);
 
 
   aditional_value += division;
   while (digitalRead(3) == LOW && aditional_value >= scaling){
-  delaymicroseconds(scaling); 
+  delayMicroseconds(scaling); 
   digitalWrite(triac, HIGH);
   lcd.clear();
   lcd.setCursor(5, 0);
   lcd.print((scaling/scaling)*100);
   Serial.println(scaling);
-  delaymicroseconds(10);
+  delayMicroseconds(10);
   digitalWrite(triac, LOW);
   }
 }
@@ -382,13 +380,15 @@ void set_time_curve(){
     pulses_1[pulses_size_1] = customKey; 
     lcd.setCursor(15 - pulses_size_1 ,1); 
     lcd.print(pulses_1[pulses_size_1]);
+    Serial.println(pulses_1[pulses_size_1]);
+    Serial.println(pulses_size_1);
     pulses_size_1--;
 
 
  }else if(customKey == 'D' && pulses_size_1 < 3){
     pulses_size_1++; 
     pulses_1[pulses_size_1] = ' '; 
-    lcd.setCursor(15 - pulses_size_1,1);
+    lcd.setCursor(15 - pulses_size_1 ,1);
     lcd.print(pulses_1[pulses_size_1]); 
  }
 
@@ -405,10 +405,11 @@ void set_time_curve(){
     String numberString_1 = "";
     for (int i = 3; i > pulses_size_1; i--) {
       numberString_1 += String(pulses_1[i]); // concatenar
+     Serial.println(pulses_1[i]);
     }
     
     final_time = numberString_1.toInt(); // convertir a int
-    Serial.println("Time obtained: " + String (final_time));
+    Serial.println("Time obtained: " + String(final_time));
     
     if (final_time < 5 || final_time > 120){
       lcd.clear();
@@ -417,7 +418,7 @@ void set_time_curve(){
       lcd.setCursor(2, 1);
       lcd.print("VALUES 5-120");
       delay(4000);
-      clearData_1(condition_for_set_time);
+      clearData_1();
       lcd.clear();
       goto inic;
     }
@@ -439,15 +440,11 @@ void clearData(){
   return;
 }
 
-void clearData_1(String condition){
-
-  if (condition == "set_time"){
+void clearData_1(){
     while(pulses_size_1 < 3){
       pulses_size_1++;
       Serial.println(pulses_1[pulses_size_1]);
-      Serial.println("here");
       pulses_1[pulses_size_1] = 0; 
     }
     return;
   }
-}
