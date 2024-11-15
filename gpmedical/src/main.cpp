@@ -25,13 +25,7 @@ float final_number; // numero de presentación final
 
 float scaling;
 
-float percent;
-
-float millis_p = 25;
-
 float final_time;
-
-float time_curve = 500;
 
 float division;
 
